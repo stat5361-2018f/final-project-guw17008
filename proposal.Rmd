@@ -1,0 +1,30 @@
+---
+title: "Proposal"
+author: "Guanting Wei"
+date: "Nov.3.2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Background
+In statistics, maximum likelihood estimation (MLE) is a method of estimating the parameters of a statistical model, given observations. However, sometimes we can not use MLE due to the missing data or latent variable. In this situation, EM algorithm works. Further more, in order to improve EM algorithm, we can use EM acceleration.
+
+# dataset
+Suppose that there are 4 kinds of animals(A,B,C,D) in a farm. And their probability are $$P(A)=\frac{1}{2}+\frac{\theta}{4}$$ 
+$$P(B)=\frac{1}{4}(1-\theta)$$ 
+$$P(C)=\frac{1}{4}(1-\theta)$$ 
+$$P(D)=\frac{\theta}{4}$$
+$$\theta \in(0,1)$$. 
+Now we randomly choose one animal 197 times and get the result
+$$A=125$$
+$$B=18$$
+$$C=20$$
+$$D=34$$
+
+# Method
+## MLE
+## EM
+## EM Acceleration
