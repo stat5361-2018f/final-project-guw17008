@@ -9,7 +9,12 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# 1 Abstract
+In statistics, maximum likelihood estimation (MLE) is a method of estimating the parameters of a statistical model, given observations. However, sometimes we can not use MLE due to the missing data or latent variable. In this situation, EM algorithm works. Further more, in order to improve EM algorithm, we can use EM acceleration.
+In other words, Em algorithm can be recognized a special situation of MLE.
 
+# 2 Sample
+Here we will use a sample to learn EM and use some methods to improve it.
 
 Suppose that there are 4 kinds of animals(A,B,C,D) in a farm. And their probability are $$P(A)=\frac{1}{2}+\frac{\theta}{4}$$ 
 $$P(B)=\frac{1}{4}(1-\theta)$$ 
@@ -22,7 +27,7 @@ $$N(B)=18$$
 $$N(C)=20$$
 $$N(D)=34$$
 
-# MLE
+## 2.1 MLE
 We let $X=(x_1,x_2,x_3,x_4)=(125,18,20,34)$
 \[
 \begin{aligned}
@@ -60,7 +65,7 @@ x
 ```
 We get $\theta=0.6268216$
 
-# EM
+## 2.2 EM
 Let's suppose that we have two subspecies of A including $A_1$,$A_2$ and 
 $$P(A_1)=\frac{1}{2}$$
 $$P(A_2)=\frac{\theta}{4}$$
@@ -78,7 +83,7 @@ We can not calculate $\theta$ through this formula.
 Then we need EM algorithm
 \[
 \begin{aligned}
-Q(\theta|{\theta}^{(i)})&=E[\ln L(X,Y;\theta|X,{\theta}^{(i)})]\\&
+Q(\theta|{\theta}^{(i)})&=E[\ln L(X,Y;\theta)|X,{\theta}^{(i)}]\\&
 =E[(x_1-Y+x_4)\ln \theta+(x_2+x_3)\ln (1-\theta)|X,{\theta}^{(i)}]\\&
 =(x_1+x_4)\ln \theta+(x_2+x_3)\ln (1-\theta)-E(Y|X,{\theta}^{(i)})\ln \theta
 \end{aligned}
@@ -113,12 +118,12 @@ EM=function(theta.init,tol,count.max){
 }
 theta=EM(0.2,1e-5,1000)
 count=length(theta)-1
-theta
+theta[length(theta)]
 count
 ```
 
-# MCEM
-We can also use Monte Carlo Method to do this EM algorithm.
+## 2.3 MCEM
+Sometimes it is hard to find pdf, so we can also use Monte Carlo Method, which is called MCEM.
 \[
 \begin{aligned}
 Q^{(i+1)}(\theta|\theta^{(i)})&=\frac{1}{m}\sum_{j=1}^{m}\ln{L(X,Y;\theta)}\\&
@@ -136,7 +141,6 @@ Y\sim b(x_1,\frac{2}{2+{\theta}^{(i)}})
 \end{aligned}
 \]
 
-
 ```{r}
 x1=125
 x2=18
@@ -147,22 +151,53 @@ MCEM=function(theta.init,m,tol,count.max){
   count=0
   for(i in 1:count.max){
     count=count+1
-    p1=2/(2+theta.init)
+    p1=2/(2+theta)
     Y=rbinom(m,x1,p1)
     theta[i+1]=(x1+x4-mean(Y))/(x1+x2+x3+x4-mean(Y))
-    theta.init=theta[i+1]
     if(abs(theta[i+1]-theta[i])<tol&&count<count.max)break
   }
   theta
 }
 theta=MCEM(0.2,10000,1e-5,1000)
 count=length(theta)-1
-theta
+theta[length(theta)]
 count
 ```
 
 
-# SQUAREM
+## 2.4 EMNR
+Sometimes the convergence speed of EM algorithm is not fast. Then we have to accelerate it. Here's one acceleration of EM algorithm.
+From above we have
+\[
+\begin{aligned}
+Q(\theta|{\theta}^{(i)})&=(x_1+x_4)\ln \theta+(x_2+x_3)\ln (1-\theta)-E(Y|X,{\theta}^{(i)})\ln \theta\\&=(x_1+x_4-\frac{2x_1}{2+{\theta}^{(i)}})\ln \theta+(x_2+x_3)\ln (1-\theta)\\&=
+(159-\frac{250}{2+{\theta}^{(i)}})\ln \theta+38\ln (1-\theta)
+\end{aligned}
+\]
+
+$$g(\theta^{(i)})=\frac{\partial Q(\theta|{\theta}^{(i)})}{\partial \theta}|_{\theta=\theta^{(i)}}=-(159-\frac{250}{2+\theta^{(i)}})\frac{1}{{\theta^{(i)}}^2}+\frac{250}{\theta^{(i)}(2+\theta^{(i)})^2}-\frac{38}{(1-\theta^{(i)})^2}$$
+
+We only need to get $\theta^*$ so that $g(\theta^*)=0$. We use Newton-Raphson to do it.
+```{r}
+EMNR=function(theta.init,tol,count.max){
+  theta=theta.init
+  count=0
+  for(i in 1:count.max){
+    count=count+1
+    theta[i+1]=theta[i]-((159-250/(2+theta[i]))/theta[i]-38/(1-theta[i]))/(-(159-250/(2+theta[i]))/theta[i]^2+250/(2+theta[i])^2/theta[i]-38/(1-theta[i])^2)
+  if(abs(theta[i+1]-theta[i])<tol&&count<count.max)break
+  }
+  theta
+}
+theta=EMNR(0.2,1e-5,1000)
+count=length(theta)-1
+theta[length(theta)]
+count
+```
+
+
+## 2.5 SQUAREM
+Here's another way to accelerate EM algorithom.
 ```{r}
 x1=125
 x2=18
@@ -186,7 +221,9 @@ theta
 count
 ```
 
-# Compare
+
+
+# 3 Compare
 Let's choose a smaller tol to see the speed of the algorithms we talk above.
 ```{r}
 tol=1e-7
@@ -194,39 +231,61 @@ count.max=1000
 theta.init=0.2
 ```
 
-## EM
+## 3.1 EM
 ```{r}
 t1=Sys.time()
 theta_EM=EM(theta.init,tol,count.max)
 t2=Sys.time()
 iter_EM=length(theta_EM)-1
-theta_EM
+theta_EM[length(theta_EM)]
 print(paste("iternation=",iter_EM))
 print(paste("time=",t2-t1))
 ```
 
-## MCEM
+## 3.2 MCEM
 ```{r}
 t3=Sys.time()
 theta_MCEM=MCEM(theta.init,10000,tol,count.max)
 t4=Sys.time()
 iter_MCEM=length(theta_MCEM)-1
 print("MCEM")
-theta_MCEM
+theta_MCEM[length(theta_MCEM)]
 print(paste("iternation=",iter_MCEM))
 print(paste("time=",t4-t3))
 ```
 
-## SQUAREM
+## 3.3 EMNR
 ```{r}
 t5=Sys.time()
-result=squarem(c(theta=theta0), fixptfn=em, objfn=loglik, control=list(tol=1e-10,mstep=5))
+theta_EMNR=EMNR(theta.init,tol,count.max)
 t6=Sys.time()
-theta_SQUAREM=result$par
-iter_SQUAREM=result$iter
-print("SQUAREM")
-theta_SQUAREM
-print(paste("iternation=",iter_SQUAREM))
+iter_EMNR=length(theta_EMNR)-1
+print("EMNR")
+theta_EMNR[length(theta_EMNR)]
+print(paste("iternation=",iter_EMNR))
 print(paste("time=",t6-t5))
 ```
 
+
+## 3.4 SQUAREM
+```{r}
+t7=Sys.time()
+result=squarem(c(theta=theta0), fixptfn=em, objfn=loglik, control=list(tol=1e-10,mstep=5))
+t8=Sys.time()
+theta_SQUAREM=result$par
+iter_SQUAREM=result$iter
+print("SQUAREM")
+theta_SQUAREM[[1]]
+print(paste("iternation=",iter_SQUAREM))
+print(paste("time=",t8-t7))
+```
+
+# 4 Result
+```{r}
+table=rbind(c(theta_EM[length(theta_EM)],theta_MCEM[length(theta_MCEM)],theta_EMNR[length(theta_EMNR)],theta_SQUAREM[[1]]),c(iter_EM,iter_MCEM,iter_EMNR,iter_SQUAREM),c(t2-t1,t4-t3,t6-t5,t8-t7))
+colnames(table)=c("EM","MCEM","EMNR","SQUAREM")
+rownames(table)=c("theta","iter","run time")
+table
+```
+
+From the result we can see that SQUAREM is the best method because it has the fewest iterations. Newton-Raphson does accelerate EM algorithom for its fewer iterations.
