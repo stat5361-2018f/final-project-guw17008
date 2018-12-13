@@ -15,7 +15,6 @@ In other words, Em algorithm can be recognized a special situation of MLE.
 
 # 2 Sample
 Here we will use a sample to learn EM and use some methods to improve it.
-
 Suppose that there are 4 kinds of animals(A,B,C,D) in a farm. And their probability are $$P(A)=\frac{1}{2}+\frac{\theta}{4}$$ 
 $$P(B)=\frac{1}{4}(1-\theta)$$ 
 $$P(C)=\frac{1}{4}(1-\theta)$$ 
@@ -164,7 +163,6 @@ theta[length(theta)]
 count
 ```
 
-
 ## 2.4 EMNR
 Sometimes the convergence speed of EM algorithm is not fast. Then we have to accelerate it. Here's one acceleration of EM algorithm.
 From above we have
@@ -175,7 +173,7 @@ Q(\theta|{\theta}^{(i)})&=(x_1+x_4)\ln \theta+(x_2+x_3)\ln (1-\theta)-E(Y|X,{\th
 \end{aligned}
 \]
 
-$$g(\theta^{(i)})=\frac{\partial Q(\theta|{\theta}^{(i)})}{\partial \theta}|_{\theta=\theta^{(i)}}=-(159-\frac{250}{2+\theta^{(i)}})\frac{1}{{\theta^{(i)}}^2}+\frac{250}{\theta^{(i)}(2+\theta^{(i)})^2}-\frac{38}{(1-\theta^{(i)})^2}$$
+$$g(\theta^{(i)})=\frac{\partial Q(\theta|{\theta}^{(i)})}{\partial \theta}|_{\theta=\theta^{(i)}}=(159-\frac{250}{2+\theta^{(i)}})\frac{1}{{\theta^{(i)}}}-\frac{38}{1-\theta^{(i)}}$$
 
 We only need to get $\theta^*$ so that $g(\theta^*)=0$. We use Newton-Raphson to do it.
 ```{r}
@@ -194,7 +192,6 @@ count=length(theta)-1
 theta[length(theta)]
 count
 ```
-
 
 ## 2.5 SQUAREM
 Here's another way to accelerate EM algorithom.
@@ -215,13 +212,11 @@ em=function(theta){
 library(SQUAREM)
 theta0=0.2
 result=squarem(c(theta=theta0), fixptfn=em, objfn=loglik, control=list(tol=1e-10,mstep=5))
-theta=result$par
+theta=result$par[[1]]
 count=result$iter
 theta
 count
 ```
-
-
 
 # 3 Compare
 Let's choose a smaller tol to see the speed of the algorithms we talk above.
@@ -237,9 +232,6 @@ t1=Sys.time()
 theta_EM=EM(theta.init,tol,count.max)
 t2=Sys.time()
 iter_EM=length(theta_EM)-1
-theta_EM[length(theta_EM)]
-print(paste("iternation=",iter_EM))
-print(paste("time=",t2-t1))
 ```
 
 ## 3.2 MCEM
@@ -248,10 +240,6 @@ t3=Sys.time()
 theta_MCEM=MCEM(theta.init,10000,tol,count.max)
 t4=Sys.time()
 iter_MCEM=length(theta_MCEM)-1
-print("MCEM")
-theta_MCEM[length(theta_MCEM)]
-print(paste("iternation=",iter_MCEM))
-print(paste("time=",t4-t3))
 ```
 
 ## 3.3 EMNR
@@ -260,12 +248,7 @@ t5=Sys.time()
 theta_EMNR=EMNR(theta.init,tol,count.max)
 t6=Sys.time()
 iter_EMNR=length(theta_EMNR)-1
-print("EMNR")
-theta_EMNR[length(theta_EMNR)]
-print(paste("iternation=",iter_EMNR))
-print(paste("time=",t6-t5))
 ```
-
 
 ## 3.4 SQUAREM
 ```{r}
@@ -274,10 +257,6 @@ result=squarem(c(theta=theta0), fixptfn=em, objfn=loglik, control=list(tol=1e-10
 t8=Sys.time()
 theta_SQUAREM=result$par
 iter_SQUAREM=result$iter
-print("SQUAREM")
-theta_SQUAREM[[1]]
-print(paste("iternation=",iter_SQUAREM))
-print(paste("time=",t8-t7))
 ```
 
 # 4 Result
@@ -286,6 +265,19 @@ table=rbind(c(theta_EM[length(theta_EM)],theta_MCEM[length(theta_MCEM)],theta_EM
 colnames(table)=c("EM","MCEM","EMNR","SQUAREM")
 rownames(table)=c("theta","iter","run time")
 table
+```
+```{r}
+plot(theta_EM,col="red",ylab="theta",xlab="iter")
+lines(theta_EM,col="red")
+points(theta_MCEM,col="blue")
+lines(theta_MCEM,col="blue")
+points(theta_EMNR,col="green")
+lines(theta_EMNR,col="green")
+legend("right", inset = .05,
+       legend = c("EM","MCEM","EMNR"),
+       pch = c(15,17,19),
+       col = c("red","blue","green")
+)
 ```
 
 From the result we can see that SQUAREM is the best method because it has the fewest iterations. Newton-Raphson does accelerate EM algorithom for its fewer iterations.
