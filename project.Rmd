@@ -19,12 +19,18 @@ Suppose that there are 4 kinds of animals(A,B,C,D) in a farm. And their probabil
 $$P(B)=\frac{1}{4}(1-\theta)$$ 
 $$P(C)=\frac{1}{4}(1-\theta)$$ 
 $$P(D)=\frac{\theta}{4}$$
-$$\theta \in(0,1)$$. 
+$$\theta \in(0,1)$$
 Now we randomly choose one animal 197 times and get the result
 $$N(A)=125$$
 $$N(B)=18$$
 $$N(C)=20$$
 $$N(D)=34$$
+```{r}
+x1=125
+x2=18
+x3=20
+x4=34
+```
 
 ## 2.1 MLE
 We let $X=(x_1,x_2,x_3,x_4)=(125,18,20,34)$
@@ -141,10 +147,6 @@ Y\sim b(x_1,\frac{2}{2+{\theta}^{(i)}})
 \]
 
 ```{r}
-x1=125
-x2=18
-x3=20
-x4=34
 MCEM=function(theta.init,m,tol,count.max){
   theta=theta.init
   count=0
@@ -196,10 +198,6 @@ count
 ## 2.5 SQUAREM
 Here's another way to accelerate EM algorithom.
 ```{r}
-x1=125
-x2=18
-x3=20
-x4=34
 loglik=function(theta){
   y=rbinom(1,x1,2/(2+theta))
   log((1-theta)^(x2+x3)*theta^(x1+x4-y))
@@ -211,7 +209,7 @@ em=function(theta){
 }
 library(SQUAREM)
 theta0=0.2
-result=squarem(c(theta=theta0), fixptfn=em, objfn=loglik, control=list(tol=1e-10,mstep=5))
+result=squarem(c(theta=theta0), fixptfn=em, objfn=loglik, control=list(tol=1e-5,mstep=5))
 theta=result$par[[1]]
 count=result$iter
 theta
@@ -255,13 +253,13 @@ iter_EMNR=length(theta_EMNR)-1
 t7=Sys.time()
 result=squarem(c(theta=theta0), fixptfn=em, objfn=loglik, control=list(tol=1e-10,mstep=5))
 t8=Sys.time()
-theta_SQUAREM=result$par
+theta_SQUAREM=result$par[[1]]
 iter_SQUAREM=result$iter
 ```
 
 # 4 Result
 ```{r}
-table=rbind(c(theta_EM[length(theta_EM)],theta_MCEM[length(theta_MCEM)],theta_EMNR[length(theta_EMNR)],theta_SQUAREM[[1]]),c(iter_EM,iter_MCEM,iter_EMNR,iter_SQUAREM),c(t2-t1,t4-t3,t6-t5,t8-t7))
+table=rbind(c(theta_EM[length(theta_EM)],theta_MCEM[length(theta_MCEM)],theta_EMNR[length(theta_EMNR)],theta_SQUAREM),c(iter_EM,iter_MCEM,iter_EMNR,iter_SQUAREM),c(t2-t1,t4-t3,t6-t5,t8-t7))
 colnames(table)=c("EM","MCEM","EMNR","SQUAREM")
 rownames(table)=c("theta","iter","run time")
 table
